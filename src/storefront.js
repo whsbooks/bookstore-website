@@ -96,15 +96,16 @@ export function createStorefront(coverMap) {
   const sidewalkFront = 0.5;
   const sidewalkDepth = 4.0;
   const sidewalkZ = sidewalkFront + sidewalkDepth / 2;
-  root.add(box(18, 0.12, sidewalkDepth, sidewalkMat, 0, 0.06, sidewalkZ));
+  const streetW = 28;
+  root.add(box(streetW, 0.12, sidewalkDepth, sidewalkMat, 0, 0.06, sidewalkZ));
 
   const curbZ = sidewalkZ + sidewalkDepth / 2 + 0.18;
-  root.add(box(18, 0.2, 0.36, mat({ color: '#6e7276', roughness: 0.9 }), 0, 0.1, curbZ));
+  root.add(box(streetW, 0.2, 0.36, mat({ color: '#6e7276', roughness: 0.9 }), 0, 0.1, curbZ));
 
   const roadDepth = 9;
   const roadZ = curbZ + 0.18 + roadDepth / 2;
-  root.add(box(18, 0.08, roadDepth, mat({ map: roadMap, roughness: 0.95 }), 0, 0.04, roadZ));
-  for (let i = -3; i <= 3; i++) {
+  root.add(box(streetW, 0.08, roadDepth, mat({ map: roadMap, roughness: 0.95 }), 0, 0.04, roadZ));
+  for (let i = -5; i <= 5; i++) {
     root.add(box(1.2, 0.02, 0.12, mat({ color: '#c9b86a', roughness: 0.8 }), i * 2.4, 0.09, roadZ));
   }
 
@@ -549,7 +550,6 @@ export function createStorefront(coverMap) {
   // Neighbor buildings (simple depth)
   root.add(box(4, 8, 5, mat({ color: '#5a4a42', roughness: 0.9 }), -9.5, 4, -2));
   root.add(box(5, 6.5, 5.5, mat({ color: '#4a5560', roughness: 0.9 }), 10, 3.25, -2.2));
-  root.add(box(2.2, 0.45, 0.1, mat({ color: '#1e4a6b', roughness: 0.5 }), 10, 4.8, 0.55));
 
   // Wet reflection strips on sidewalk
   for (let i = 0; i < 8; i++) {
