@@ -7,27 +7,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <div id="app">
-      <canvas id="scene"></canvas>
-      <div class="hud">
-        <p class="hud-brand">수영의 서점</p>
-        <p class="hud-sub">드래그하여 둘러보기 · 스크롤로 확대</p>
-      </div>
-      <a
-        class="book-link"
-        href="https://github.com/whsbooks/swimming-book"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        책 보기 · Swimming the Art
-      </a>
-    </div>
+    <main id="app">
+      <canvas id="scene" aria-label="수영의 서점 storefront"></canvas>
+      <header class="hero">
+        <h1 class="brand">수영의 서점</h1>
+        <p class="tagline">창 앞에 놓인 책, Swimming the Art</p>
+        <a
+          class="cta"
+          href="https://github.com/whsbooks/swimming-book"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          책 보기
+        </a>
+      </header>
+    </main>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

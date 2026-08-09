@@ -397,7 +397,7 @@ export function createStorefront(coverMap) {
     root.add(shade);
     const glow = new THREE.Mesh(
       new THREE.SphereGeometry(0.1, 12, 12),
-      mat({ color: '#fff2cc', emissive: '#ffd88a', emissiveIntensity: 2 })
+      mat({ color: '#fff6e4', emissive: '#ffe7b8', emissiveIntensity: 0.55 })
     );
     glow.position.set(x, 5.4, -2.5);
     root.add(glow);
@@ -444,7 +444,7 @@ export function createStorefront(coverMap) {
   lamp.add(lampHead);
   const lampGlow = new THREE.Mesh(
     new THREE.SphereGeometry(0.14, 12, 12),
-    mat({ color: '#ffe6a8', emissive: '#ffcc66', emissiveIntensity: 2 })
+    mat({ color: '#d8d2c4', emissive: '#cfc8b8', emissiveIntensity: 0.15 })
   );
   lampGlow.position.set(0.55, 3.4, 0);
   lamp.add(lampGlow);
@@ -538,7 +538,7 @@ export function createStorefront(coverMap) {
   lantern.add(lanternCage);
   const lanternGlow = new THREE.Mesh(
     new THREE.SphereGeometry(0.1, 12, 12),
-    mat({ color: '#ffe0a0', emissive: '#ffc266', emissiveIntensity: 2 })
+    mat({ color: '#e8dcc0', emissive: '#d4c4a0', emissiveIntensity: 0.25 })
   );
   lanternGlow.position.set(0, 0, 0.05);
   lantern.add(lanternGlow);
