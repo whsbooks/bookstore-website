@@ -7,7 +7,6 @@ import {
   asphaltTexture,
   signTexture,
   hangingSignTexture,
-  posterTexture,
   openSignTexture,
   hoursTexture,
   spineTexture,
@@ -187,8 +186,6 @@ export function createStorefront(coverMap) {
   const pierFront = facadeZ + 0.55 / 2;
   // Nearly flush with brick; tiny proud amount so metal reads cleanly
   const frameZ = pierFront + 0.015;
-  const mullionT = 0.055;
-  const mullionZ = frameZ + 0.03;
 
   // Opening returns close the wall thickness so no hollow gap shows at the edges
   const wallDepth = 0.55;
@@ -208,31 +205,16 @@ export function createStorefront(coverMap) {
   const clearH = stileH;
   const clearX = winX;
   const clearY = winY;
+  const glassZ = frameZ + 0.04;
 
-  root.add(box(mullionT, clearH, mullionT, darkMetal, clearX, clearY, mullionZ));
-  const halfClearW = (clearW - mullionT) / 2;
-  root.add(box(halfClearW, mullionT, mullionT, darkMetal, clearX - (halfClearW + mullionT) / 2, clearY, mullionZ));
-  root.add(box(halfClearW, mullionT, mullionT, darkMetal, clearX + (halfClearW + mullionT) / 2, clearY, mullionZ));
-
-  const gap = 0.03;
-  const paneW = halfClearW - gap * 2;
-  const paneH = (clearH - mullionT) / 2 - gap * 2;
-  const glassZ = mullionZ + 0.02;
-  for (const sx of [-1, 1]) {
-    for (const sy of [-1, 1]) {
-      const pane = new THREE.Mesh(
-        new THREE.PlaneGeometry(Math.max(paneW, 0.05), Math.max(paneH, 0.05)),
-        glassMat
-      );
-      pane.position.set(
-        clearX + (sx * (halfClearW + mullionT)) / 2,
-        clearY + sy * ((clearH - mullionT) / 4 + mullionT / 2),
-        glassZ
-      );
-      pane.renderOrder = 2;
-      root.add(pane);
-    }
-  }
+  // Single clear pane — no center cross
+  const pane = new THREE.Mesh(
+    new THREE.PlaneGeometry(clearW - 0.04, clearH - 0.04),
+    glassMat
+  );
+  pane.position.set(clearX, clearY, glassZ);
+  pane.renderOrder = 2;
+  root.add(pane);
 
   const backH = winH - 0.2;
   const backY = winBottom + 0.1 + backH / 2;
@@ -261,65 +243,72 @@ export function createStorefront(coverMap) {
   const recessDepth = 0.75;
   const jambW = 0.1;
   const headH = 0.12;
+  const landTop = 0.12; // flush with sidewalk top — no drop into the doorway
   const doorLeafW = doorOpenW - jambW * 2;
-  const doorH = groundTop - headH - 0.02;
-  const doorY = 0.02 + doorH / 2;
-  const doorZ = pierFront - recessDepth; // set back from facade
+  const doorH = groundTop - headH - landTop;
+  const doorY = landTop + doorH / 2;
+  const doorZ = pierFront - recessDepth;
   const recessMidZ = pierFront - recessDepth / 2;
   const stileW = 0.14;
   const glassW = doorLeafW - stileW * 2;
-  const glassH = 1.55;
-  const glassCY = doorY + 0.35;
-  const railH = 0.12;
-  const bottomPanelH = glassCY - glassH / 2 - railH - 0.02;
+  const glassH = 1.45;
+  const glassCY = doorY + 0.28;
+  const railH = 0.11;
+  const bottomPanelH = glassCY - glassH / 2 - railH - landTop;
   const topPanelH = doorY + doorH / 2 - (glassCY + glassH / 2 + railH);
   const recessWallMat = mat({ color: '#6a5244', roughness: 0.88 });
+  const recessH = groundTop - landTop;
 
-  // Alcove side walls + soffit + landing
-  root.add(box(0.08, groundTop, recessDepth, recessWallMat, doorX - doorOpenW / 2 + 0.04, groundTop / 2, recessMidZ));
-  root.add(box(0.08, groundTop, recessDepth, recessWallMat, doorX + doorOpenW / 2 - 0.04, groundTop / 2, recessMidZ));
-  root.add(box(doorOpenW, 0.08, recessDepth, darkMetal, doorX, groundTop - 0.04, recessMidZ));
-  root.add(box(doorOpenW + 0.1, 0.05, recessDepth + 0.2, mat({ color: '#8a8e92', roughness: 0.9 }), doorX, 0.04, recessMidZ + 0.05));
+  // Alcove walls from landing up to lintel (not below grade)
+  root.add(box(0.08, recessH, recessDepth, recessWallMat, doorX - doorOpenW / 2 + 0.04, landTop + recessH / 2, recessMidZ));
+  root.add(box(0.08, recessH, recessDepth, recessWallMat, doorX + doorOpenW / 2 - 0.04, landTop + recessH / 2, recessMidZ));
+  // Soffit under the lintel — keep clear of the brick lintel face
+  root.add(box(doorOpenW - 0.04, 0.07, recessDepth - 0.04, darkMetal, doorX, groundTop - 0.1, recessMidZ));
+  // Landing flush with sidewalk
+  root.add(
+    box(doorOpenW + 0.12, 0.06, recessDepth + 0.28, mat({ color: '#8a8e92', roughness: 0.9 }), doorX, landTop - 0.03, recessMidZ + 0.06)
+  );
 
-  // Outer frame at the recessed door plane
-  root.add(box(doorOpenW, headH, 0.2, darkMetal, doorX, doorY + doorH / 2 + headH / 2, doorZ));
-  root.add(box(jambW, doorH + headH, 0.2, darkMetal, doorX - doorOpenW / 2 + jambW / 2, doorY + headH / 2, doorZ));
-  root.add(box(jambW, doorH + headH, 0.2, darkMetal, doorX + doorOpenW / 2 - jambW / 2, doorY + headH / 2, doorZ));
+  // Frame: head full width; jambs only between head and landing (no corner overlap / flashing)
+  root.add(box(doorOpenW, headH, 0.18, darkMetal, doorX, groundTop - headH / 2, doorZ));
+  root.add(box(jambW, doorH, 0.18, darkMetal, doorX - doorOpenW / 2 + jambW / 2, doorY, doorZ));
+  root.add(box(jambW, doorH, 0.18, darkMetal, doorX + doorOpenW / 2 - jambW / 2, doorY, doorZ));
 
-  // Door leaf parts
-  root.add(box(stileW, doorH, 0.09, woodMat, doorX - doorLeafW / 2 + stileW / 2, doorY, doorZ - 0.02));
-  root.add(box(stileW, doorH, 0.09, woodMat, doorX + doorLeafW / 2 - stileW / 2, doorY, doorZ - 0.02));
+  // Door leaf parts inside the frame opening
+  const leafZ = doorZ - 0.025;
+  root.add(box(stileW, doorH, 0.08, woodMat, doorX - doorLeafW / 2 + stileW / 2, doorY, leafZ));
+  root.add(box(stileW, doorH, 0.08, woodMat, doorX + doorLeafW / 2 - stileW / 2, doorY, leafZ));
   if (bottomPanelH > 0.05) {
-    root.add(box(glassW, bottomPanelH, 0.09, woodMat, doorX, 0.02 + bottomPanelH / 2, doorZ - 0.02));
+    root.add(box(glassW, bottomPanelH, 0.08, woodMat, doorX, landTop + bottomPanelH / 2, leafZ));
   }
-  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY - glassH / 2 - railH / 2, doorZ - 0.02));
-  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH / 2, doorZ - 0.02));
+  root.add(box(glassW, railH, 0.08, woodMat, doorX, glassCY - glassH / 2 - railH / 2, leafZ));
+  root.add(box(glassW, railH, 0.08, woodMat, doorX, glassCY + glassH / 2 + railH / 2, leafZ));
   if (topPanelH > 0.05) {
     root.add(
-      box(glassW, topPanelH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH + topPanelH / 2, doorZ - 0.02)
+      box(glassW, topPanelH, 0.08, woodMat, doorX, glassCY + glassH / 2 + railH + topPanelH / 2, leafZ)
     );
   }
 
   const doorGlass = new THREE.Mesh(new THREE.PlaneGeometry(glassW - 0.02, glassH - 0.02), glassMat);
-  doorGlass.position.set(doorX, glassCY, doorZ + 0.03);
+  doorGlass.position.set(doorX, glassCY, doorZ + 0.02);
   doorGlass.renderOrder = 2;
   root.add(doorGlass);
 
-  root.add(box(0.07, 0.5, 0.07, brass, doorX - doorLeafW / 2 + 0.16, doorY - 0.1, doorZ + 0.08));
+  root.add(box(0.07, 0.5, 0.07, brass, doorX - doorLeafW / 2 + 0.16, doorY - 0.1, doorZ + 0.06));
   root.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), brass)).position.set(
     doorX - doorLeafW / 2 + 0.16,
     doorY + 0.15,
-    doorZ + 0.12
+    doorZ + 0.1
   );
-  root.add(box(doorLeafW - 0.04, 0.28, 0.04, brass, doorX, 0.2, doorZ + 0.04));
-  root.add(box(doorOpenW, 0.03, 0.25, darkMetal, doorX, 0.03, doorZ));
+  root.add(box(doorLeafW - 0.04, 0.28, 0.04, brass, doorX, landTop + 0.18, doorZ + 0.03));
+  root.add(box(doorOpenW - 0.02, 0.03, 0.2, darkMetal, doorX, landTop + 0.015, doorZ));
 
   const openTex = openSignTexture();
   const openSign = new THREE.Mesh(
     new THREE.PlaneGeometry(0.48, 0.3),
     mat({ map: openTex, roughness: 0.5, emissive: '#0a4020', emissiveIntensity: 0.25, depthWrite: false })
   );
-  openSign.position.set(doorX, glassCY + 0.35, doorZ + 0.05);
+  openSign.position.set(doorX, glassCY + 0.32, doorZ + 0.04);
   openSign.renderOrder = 3;
   root.add(openSign);
 
@@ -434,7 +423,6 @@ export function createStorefront(coverMap) {
     box(0.5, 0.02, 0.35, mat({ color: '#cfd8e0', roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.45 }), 0, 0.76, 0.05)
   );
 
-  const plaqueTex = posterTexture();
   const plaque = new THREE.Mesh(
     new THREE.PlaneGeometry(0.55, 0.28),
     mat({
@@ -446,18 +434,6 @@ export function createStorefront(coverMap) {
   display.add(plaque);
 
   root.add(display);
-
-  // Window posters on sides (inside, not covering the book)
-  const poster = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.55, 0.85),
-    mat({ map: plaqueTex, roughness: 0.55 })
-  );
-  poster.position.set(winX + 2.15, 2.35, -0.9);
-  root.add(poster);
-
-  const poster2 = poster.clone();
-  poster2.position.set(winX - 2.15, 2.35, -0.9);
-  root.add(poster2);
 
   // --- Interior bookshelves ---
   const shelfMat = woodMat;
@@ -548,13 +524,8 @@ export function createStorefront(coverMap) {
   lamp.add(lampGlow);
   root.add(lamp);
 
-  // Bike rack + bike silhouette
-  root.add(box(1.4, 0.05, 0.05, darkMetal, 5.5, 0.35, 1.5));
-  root.add(box(0.05, 0.55, 0.05, darkMetal, 4.9, 0.35, 1.5));
-  root.add(box(0.05, 0.55, 0.05, darkMetal, 6.1, 0.35, 1.5));
-
   // Doormat on the recessed landing
-  root.add(box(1.1, 0.03, 0.55, mat({ color: '#3a4a3a', roughness: 1 }), doorX, 0.08, recessMidZ + 0.05));
+  root.add(box(1.1, 0.03, 0.55, mat({ color: '#3a4a3a', roughness: 1 }), doorX, landTop + 0.02, recessMidZ + 0.05));
 
   // Address number on right pier
   const addr = makeCanvasNumber('17');

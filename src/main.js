@@ -25,8 +25,8 @@ scene.fog = new THREE.FogExp2('#c5d7e8', 0.012);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
 const desktopCam = new THREE.Vector3(6.2, 7.8, 11.5);
 const desktopTarget = new THREE.Vector3(0.2, 2.4, -0.8);
-const mobileCam = new THREE.Vector3(5.0, 7.4, 13.8);
-const mobileTarget = new THREE.Vector3(0.15, 2.75, 0.15);
+const mobileCam = new THREE.Vector3(2.4, 6.6, 16.8);
+const mobileTarget = new THREE.Vector3(1.0, 2.85, 0.15);
 camera.position.copy(desktopCam);
 
 const controls = new OrbitControls(camera, canvas);
@@ -67,7 +67,8 @@ function applyResponsiveCamera() {
   if (mobile) {
     // Custom horizontal drag + native vertical scroll (OrbitControls off)
     controls.enabled = false;
-    camera.fov = window.innerWidth < 420 ? 50 : 46;
+    // Wider FOV + frontal framing so window and door both fit on a phone
+    camera.fov = window.innerWidth < 420 ? 56 : 52;
     if (switching || wasMobile === null) {
       camera.position.copy(mobileCam);
       controls.target.copy(mobileTarget);
@@ -131,8 +132,8 @@ canvas.addEventListener(
     mobileOrbit.startX = x;
     mobileOrbit.spherical.theta -= deltaX * 0.005;
     mobileOrbit.spherical.theta = Math.max(
-      -0.45,
-      Math.min(0.75, mobileOrbit.spherical.theta)
+      -0.35,
+      Math.min(0.95, mobileOrbit.spherical.theta)
     );
     mobileOrbit.spherical.phi = Math.max(
       Math.PI * 0.22,
