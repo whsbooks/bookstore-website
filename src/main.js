@@ -125,7 +125,7 @@ scene.add(awningGlow);
 
 async function init() {
   const loader = new THREE.TextureLoader();
-  const coverMap = await loader.loadAsync('/cover-01.png');
+  const coverMap = await loader.loadAsync(`${import.meta.env.BASE_URL}cover-01.png`);
   coverMap.colorSpace = THREE.SRGBColorSpace;
   coverMap.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
