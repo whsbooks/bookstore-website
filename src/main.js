@@ -97,16 +97,9 @@ const skyFill = new THREE.DirectionalLight('#a8c8e8', 0.65);
 skyFill.position.set(-7, 9, 5);
 scene.add(skyFill);
 
-// Bright wash into the display window so the book is readable
-const windowWash = new THREE.SpotLight('#fffaf0', 40, 18, Math.PI / 4.5, 0.4, 1);
-windowWash.position.set(-1.0, 5.5, 5.5);
-windowWash.target.position.set(-1.15, 1.6, 0.1);
-windowWash.castShadow = true;
-scene.add(windowWash);
-scene.add(windowWash.target);
-
-const windowFill = new THREE.PointLight('#fff5e6', 8, 7, 1.6);
-windowFill.position.set(-1.15, 2.8, 0.6);
+// Soft interior fill so the display book reads in morning light (no hard spotlight cone)
+const windowFill = new THREE.PointLight('#fff6ea', 3.2, 6.5, 2);
+windowFill.position.set(-1.15, 2.6, -0.35);
 scene.add(windowFill);
 
 for (const [x, z] of [
@@ -114,7 +107,7 @@ for (const [x, z] of [
   [0.5, -2.5],
   [3.0, -2.5],
 ]) {
-  const pl = new THREE.PointLight('#fff0d4', 2.4, 8, 2);
+  const pl = new THREE.PointLight('#fff0d4', 1.8, 7, 2);
   pl.position.set(x, 5.35, z);
   scene.add(pl);
 }
@@ -174,7 +167,7 @@ async function init() {
     t += 0.006;
     particles.position.y = Math.sin(t * 0.4) * 0.08;
     if (book) {
-      book.position.y = 1.3 + Math.sin(t * 0.8) * 0.01;
+      book.position.y = 1.14 + Math.sin(t * 0.8) * 0.01;
       book.rotation.y = -0.12 + Math.sin(t * 0.45) * 0.03;
     }
     if (!dragging) {

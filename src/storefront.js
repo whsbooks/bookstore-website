@@ -177,38 +177,48 @@ export function createStorefront(coverMap) {
     root.add(box(1.15, 1.3, 0.04, mat({ color: '#c9b8a0', roughness: 0.95, transparent: true, opacity: 0.55 }), x, 5.85, 0.3));
   }
 
-  // --- Main display window (frame pieces do not overlap — prevents flashing) ---
-  const winH = 3.2;
+  // --- Main display window ---
+  // Frame sits fully in front of the brick; stiles stop between rails (no left/right flashing)
+  const winH = 3.15;
   const winY = 2.05;
-  const frameT = 0.1;
-  const frameD = 0.16;
-  const frameZ = 0.44;
-  const mullionT = 0.06;
-  const mullionZ = 0.5;
+  const frameT = 0.11;
+  const frameD = 0.14;
+  const pierFront = facadeZ + 0.55 / 2;
+  const frameZ = pierFront + frameD / 2 + 0.04;
+  const mullionT = 0.055;
+  const mullionZ = frameZ + 0.02;
 
-  // Outer frame: sides stop short of top/bottom so corners don't double-draw
-  root.add(box(winW + frameT * 2, frameT, frameD, darkMetal, winX, winY + winH / 2 + frameT / 2, frameZ));
-  root.add(box(winW + frameT * 2, frameT, frameD, darkMetal, winX, winY - winH / 2 - frameT / 2, frameZ));
-  root.add(box(frameT, winH, frameD, darkMetal, winX - winW / 2 - frameT / 2, winY, frameZ));
-  root.add(box(frameT, winH, frameD, darkMetal, winX + winW / 2 + frameT / 2, winY, frameZ));
+  // Top / bottom rails (full window width)
+  root.add(box(winW, frameT, frameD, darkMetal, winX, winY + winH / 2 - frameT / 2, frameZ));
+  root.add(box(winW, frameT, frameD, darkMetal, winX, winY - winH / 2 + frameT / 2, frameZ));
+  // Left / right stiles — only between the rails
+  const stileH = winH - frameT * 2;
+  root.add(box(frameT, stileH, frameD, darkMetal, winX - winW / 2 + frameT / 2, winY, frameZ));
+  root.add(box(frameT, stileH, frameD, darkMetal, winX + winW / 2 - frameT / 2, winY, frameZ));
 
-  // Cross mullions: vertical full; horizontal as two halves (no crossing volume)
-  root.add(box(mullionT, winH, mullionT, darkMetal, winX, winY, mullionZ));
-  const halfW = (winW - mullionT) / 2;
-  root.add(box(halfW, mullionT, mullionT, darkMetal, winX - (halfW + mullionT) / 2, winY, mullionZ));
-  root.add(box(halfW, mullionT, mullionT, darkMetal, winX + (halfW + mullionT) / 2, winY, mullionZ));
+  const clearW = winW - frameT * 2;
+  const clearH = stileH;
+  const clearX = winX;
+  const clearY = winY;
 
-  // Glass panes inset inside each quadrant (gap from mullions avoids z-fight)
-  const gap = 0.04;
-  const paneW = halfW - gap * 2;
-  const paneH = winH / 2 - mullionT / 2 - gap * 2;
-  const glassZ = 0.52;
+  root.add(box(mullionT, clearH, mullionT, darkMetal, clearX, clearY, mullionZ));
+  const halfClearW = (clearW - mullionT) / 2;
+  root.add(box(halfClearW, mullionT, mullionT, darkMetal, clearX - (halfClearW + mullionT) / 2, clearY, mullionZ));
+  root.add(box(halfClearW, mullionT, mullionT, darkMetal, clearX + (halfClearW + mullionT) / 2, clearY, mullionZ));
+
+  const gap = 0.035;
+  const paneW = halfClearW - gap * 2;
+  const paneH = (clearH - mullionT) / 2 - gap * 2;
+  const glassZ = mullionZ + 0.025;
   for (const sx of [-1, 1]) {
     for (const sy of [-1, 1]) {
-      const pane = new THREE.Mesh(new THREE.PlaneGeometry(paneW, paneH), glassMat);
+      const pane = new THREE.Mesh(
+        new THREE.PlaneGeometry(Math.max(paneW, 0.05), Math.max(paneH, 0.05)),
+        glassMat
+      );
       pane.position.set(
-        winX + sx * (halfW + mullionT) / 2,
-        winY + sy * (paneH / 2 + mullionT / 2 + gap),
+        clearX + (sx * (halfClearW + mullionT)) / 2,
+        clearY + sy * ((clearH - mullionT) / 4 + mullionT / 2),
         glassZ
       );
       pane.renderOrder = 2;
@@ -216,17 +226,29 @@ export function createStorefront(coverMap) {
     }
   }
 
-  // Interior backboard — stop below the lintel so nothing flashes above it
   const backH = Math.min(winH - 0.1, groundTop - 0.35);
   const backY = 0.2 + backH / 2;
   root.add(
-    box(winW - 0.15, backH, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.18 }), winX, backY, -1.35)
+    box(winW - 0.25, backH, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.18 }), winX, backY, -1.35)
   );
-  root.add(box(winW - 0.1, 0.35, 0.5, plasterMat, winX, groundTop - 0.15, -0.6));
+  root.add(box(winW - 0.2, 0.35, 0.5, plasterMat, winX, groundTop - 0.15, -0.6));
 
-  root.add(box(winW + 0.2, 0.12, 0.45, woodMat, winX, winY - winH / 2 - 0.05, 0.35));
-  root.add(box(Math.min(winW - 0.3, 4.6), 0.15, 1.5, lightWoodMat, winX, 0.55, -0.2));
-  root.add(box(Math.min(winW - 0.3, 4.6), 0.45, 1.45, mat({ color: '#d7c4a8', roughness: 0.75 }), winX, 0.3, -0.2));
+  // Exterior sill only (outside under the frame)
+  root.add(box(winW + 0.1, 0.08, 0.28, woodMat, winX, winY - winH / 2 - 0.06, frameZ + 0.08));
+
+  // Interior display platform — fully inside the shop, layers stacked with no overlap
+  const platformW = Math.min(winW - 0.55, 4.0);
+  const platformDepth = 1.05;
+  const platformZ = -0.65; // stays behind the glass (~0.5+)
+  const floorY = 0.16;
+  const deckH = 0.07;
+  const riserH = 0.42;
+  const riserMat = mat({ color: '#b59a78', roughness: 0.82 });
+  root.add(box(platformW, riserH, platformDepth - 0.06, riserMat, winX, floorY + riserH / 2, platformZ));
+  root.add(
+    box(platformW + 0.04, deckH, platformDepth, lightWoodMat, winX, floorY + riserH + deckH / 2, platformZ)
+  );
+  const platformTop = floorY + riserH + deckH;
 
   // --- Door with a real glass opening (no wood behind the pane) ---
   const jambW = 0.1;
@@ -308,12 +330,12 @@ export function createStorefront(coverMap) {
   mainSign.castShadow = true;
   root.add(mainSign);
 
-  // Sign light fixtures
+  // Sign fixtures (daytime — dim, not glowing hard)
   for (const x of [-2.8, -0.4, 2.0]) {
     root.add(box(0.35, 0.08, 0.35, brass, x, 4.75, 0.7));
     const bulb = new THREE.Mesh(
       new THREE.SphereGeometry(0.09, 12, 12),
-      mat({ color: '#fff4d6', emissive: '#ffe9b0', emissiveIntensity: 1.8, roughness: 0.25 })
+      mat({ color: '#e8e0d0', emissive: '#d8d0c0', emissiveIntensity: 0.2, roughness: 0.45 })
     );
     bulb.position.set(x, 4.68, 0.78);
     root.add(bulb);
@@ -364,14 +386,14 @@ export function createStorefront(coverMap) {
   awningGroup.add(box(6.2, 0.04, 0.04, darkMetal, -1.15, 3.35, 1.55));
   root.add(awningGroup);
 
-  // --- Featured book display (window) ---
+  // --- Featured book display (on the interior platform) ---
   const display = new THREE.Group();
-  display.position.set(winX, 0.7, 0.05);
+  display.position.set(winX, platformTop, platformZ + 0.15);
 
   // Pedestal
-  const pedestal = box(0.75, 0.85, 0.75, lightWoodMat, 0, 0.42, 0);
+  const pedestal = box(0.7, 0.7, 0.7, lightWoodMat, 0, 0.35, 0);
   display.add(pedestal);
-  display.add(box(0.9, 0.06, 0.9, woodMat, 0, 0.88, 0));
+  display.add(box(0.82, 0.05, 0.82, woodMat, 0, 0.725, 0));
 
   // Featured book — uses real cover, facing the street
   const bookW = 0.52;
@@ -388,19 +410,21 @@ export function createStorefront(coverMap) {
     coverMat,
     mat({ color: FOAM, roughness: 0.5 }),
   ]);
-  featured.position.set(0, 1.3, 0.12);
+  featured.position.set(0, 1.14, 0.05);
   featured.rotation.y = -0.12;
   featured.castShadow = true;
   display.add(featured);
 
   // Second copy slightly behind
   const copy2 = featured.clone();
-  copy2.position.set(0.12, 1.26, -0.1);
+  copy2.position.set(0.12, 1.1, -0.12);
   copy2.rotation.y = 0.28;
   copy2.scale.set(0.92, 0.92, 0.92);
   display.add(copy2);
 
-  display.add(box(0.55, 0.02, 0.4, mat({ color: '#cfd8e0', roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.45 }), 0, 0.92, 0.08));
+  display.add(
+    box(0.5, 0.02, 0.35, mat({ color: '#cfd8e0', roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.45 }), 0, 0.76, 0.05)
+  );
 
   const plaqueTex = posterTexture();
   const plaque = new THREE.Mesh(
@@ -410,7 +434,7 @@ export function createStorefront(coverMap) {
       roughness: 0.5,
     })
   );
-  plaque.position.set(0, 0.55, 0.4);
+  plaque.position.set(0, 0.4, 0.38);
   display.add(plaque);
 
   root.add(display);
@@ -534,8 +558,10 @@ export function createStorefront(coverMap) {
   root.add(addrPlate);
 
   // Window LED strip inside top
-  const led = box(winW - 0.3, 0.04, 0.04, mat({ color: '#fff', emissive: '#cce8ff', emissiveIntensity: 1.5 }), winX, winY + winH / 2 - 0.2, -0.05);
-  root.add(led);
+  // Soft accent strip inside the window (morning, not a hard LED beam)
+  root.add(
+    box(winW - 0.4, 0.03, 0.03, mat({ color: '#f2efe8', emissive: '#efe8dc', emissiveIntensity: 0.25 }), winX, winY + winH / 2 - 0.25, -0.15)
+  );
 
   // Neighbor buildings (simple depth)
   root.add(box(4, 8, 5, mat({ color: '#5a4a42', roughness: 0.9 }), -9.5, 4, -2));
@@ -553,16 +579,16 @@ export function createStorefront(coverMap) {
     root.add(puddle);
   }
 
-  // Extra window-table books (supporting display)
+  // Extra window-table books (supporting display) — on the interior platform only
   const stackColors = [WAVE, '#1a3c4a', '#4a3728', '#2c3e50'];
   for (let i = 0; i < 4; i++) {
     addBook(
       root,
-      winX - 1.7 + i * 0.2,
-      0.72 + i * 0.035,
-      -0.55,
-      0.2,
-      0.28,
+      winX - 1.35 + i * 0.2,
+      platformTop + 0.14 + i * 0.03,
+      platformZ - 0.15,
+      0.18,
+      0.26,
       0.04,
       stackColors[i],
       '수영',
@@ -573,12 +599,12 @@ export function createStorefront(coverMap) {
   for (let i = 0; i < 5; i++) {
     addBook(
       root,
-      winX + 1.55 + i * 0.08,
-      0.85,
-      -0.4,
+      winX + 1.25 + i * 0.08,
+      platformTop + 0.18 + (i % 3) * 0.02,
+      platformZ + 0.05,
       0.05,
-      0.32 + (i % 3) * 0.04,
-      0.22,
+      0.3 + (i % 3) * 0.04,
+      0.2,
       stackColors[i % stackColors.length],
       '책',
       0.05
@@ -632,24 +658,30 @@ export function createStorefront(coverMap) {
   chair.add(box(0.06, 0.4, 0.06, darkMetal, 0.22, 0.2, -0.22));
   root.add(chair);
 
-  // Ceiling track lights aimed at window
+  // Ceiling fixtures (subtle daytime presence)
   for (const x of [-2.5, -1.15, 0.2]) {
-    root.add(box(0.2, 0.08, 0.2, darkMetal, x, 6.85, -1.0));
+    root.add(box(0.18, 0.06, 0.18, darkMetal, x, 6.85, -1.0));
   }
 
-  // Facade decorative brick soldier course above plinth
-  for (let i = 0; i < 20; i++) {
-    root.add(
-      box(
-        0.42,
-        0.18,
-        0.12,
-        mat({ color: i % 2 ? '#5a3a2c' : '#6e4a38', roughness: 0.9 }),
-        -4.7 + i * 0.5,
-        0.55,
-        0.48
-      )
-    );
+  // Facade decorative brick soldier course — only on piers, not under the window frame
+  for (const [startX, count] of [
+    [-4.7, 3],
+    [midPierX - 0.15, 1],
+    [rightPierX - 0.35, 3],
+  ]) {
+    for (let i = 0; i < count; i++) {
+      root.add(
+        box(
+          0.38,
+          0.16,
+          0.1,
+          mat({ color: i % 2 ? '#5a3a2c' : '#6e4a38', roughness: 0.9 }),
+          startX + i * 0.45,
+          0.48,
+          pierFront + 0.06
+        )
+      );
+    }
   }
 
   // Roof edge tiles suggestion
