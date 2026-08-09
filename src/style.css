@@ -348,8 +348,8 @@ a {
   }
 
   #scene {
-    pointer-events: none;
-    cursor: default;
+    touch-action: pan-y;
+    cursor: grab;
   }
 
   .hero-copy {

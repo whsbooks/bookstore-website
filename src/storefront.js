@@ -177,21 +177,29 @@ export function createStorefront(coverMap) {
     root.add(box(1.15, 1.3, 0.04, mat({ color: '#c9b8a0', roughness: 0.95, transparent: true, opacity: 0.55 }), x, 5.85, 0.3));
   }
 
-  // --- Main display window ---
-  // Frame sits fully in front of the brick; stiles stop between rails (no left/right flashing)
-  const winH = 3.15;
-  const winY = 2.05;
-  const frameT = 0.11;
-  const frameD = 0.14;
+  // --- Main display window: fills the masonry opening flush (no gaps L/R/top) ---
+  const winBottom = 0.42;
+  const winTop = groundTop; // meets lintel
+  const winH = winTop - winBottom;
+  const winY = (winTop + winBottom) / 2;
+  const frameT = 0.12;
+  const frameD = 0.18;
   const pierFront = facadeZ + 0.55 / 2;
-  const frameZ = pierFront + frameD / 2 + 0.04;
+  // Nearly flush with brick; tiny proud amount so metal reads cleanly
+  const frameZ = pierFront + 0.015;
   const mullionT = 0.055;
-  const mullionZ = frameZ + 0.02;
+  const mullionZ = frameZ + 0.03;
 
-  // Top / bottom rails (full window width)
-  root.add(box(winW, frameT, frameD, darkMetal, winX, winY + winH / 2 - frameT / 2, frameZ));
-  root.add(box(winW, frameT, frameD, darkMetal, winX, winY - winH / 2 + frameT / 2, frameZ));
-  // Left / right stiles — only between the rails
+  // Opening returns close the wall thickness so no hollow gap shows at the edges
+  const wallDepth = 0.55;
+  root.add(box(0.06, winH, wallDepth, darkMetal, openLeft + 0.03, winY, facadeZ));
+  root.add(box(0.06, winH, wallDepth, darkMetal, midPierX - midPierW / 2 - 0.03, winY, facadeZ));
+  root.add(box(winW, 0.06, wallDepth, darkMetal, winX, winTop - 0.03, facadeZ));
+  root.add(box(winW, 0.06, wallDepth, darkMetal, winX, winBottom + 0.03, facadeZ));
+
+  // Outer frame fills the opening edge-to-edge
+  root.add(box(winW, frameT, frameD, darkMetal, winX, winTop - frameT / 2, frameZ));
+  root.add(box(winW, frameT, frameD, darkMetal, winX, winBottom + frameT / 2, frameZ));
   const stileH = winH - frameT * 2;
   root.add(box(frameT, stileH, frameD, darkMetal, winX - winW / 2 + frameT / 2, winY, frameZ));
   root.add(box(frameT, stileH, frameD, darkMetal, winX + winW / 2 - frameT / 2, winY, frameZ));
@@ -206,10 +214,10 @@ export function createStorefront(coverMap) {
   root.add(box(halfClearW, mullionT, mullionT, darkMetal, clearX - (halfClearW + mullionT) / 2, clearY, mullionZ));
   root.add(box(halfClearW, mullionT, mullionT, darkMetal, clearX + (halfClearW + mullionT) / 2, clearY, mullionZ));
 
-  const gap = 0.035;
+  const gap = 0.03;
   const paneW = halfClearW - gap * 2;
   const paneH = (clearH - mullionT) / 2 - gap * 2;
-  const glassZ = mullionZ + 0.025;
+  const glassZ = mullionZ + 0.02;
   for (const sx of [-1, 1]) {
     for (const sy of [-1, 1]) {
       const pane = new THREE.Mesh(
@@ -226,20 +234,19 @@ export function createStorefront(coverMap) {
     }
   }
 
-  const backH = Math.min(winH - 0.1, groundTop - 0.35);
-  const backY = 0.2 + backH / 2;
+  const backH = winH - 0.2;
+  const backY = winBottom + 0.1 + backH / 2;
   root.add(
-    box(winW - 0.25, backH, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.18 }), winX, backY, -1.35)
+    box(winW - 0.2, backH, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.18 }), winX, backY, -1.35)
   );
-  root.add(box(winW - 0.2, 0.35, 0.5, plasterMat, winX, groundTop - 0.15, -0.6));
 
-  // Exterior sill only (outside under the frame)
-  root.add(box(winW + 0.1, 0.08, 0.28, woodMat, winX, winY - winH / 2 - 0.06, frameZ + 0.08));
+  // Exterior sill under the window
+  root.add(box(winW + 0.08, 0.08, 0.32, woodMat, winX, winBottom - 0.05, pierFront + 0.12));
 
-  // Interior display platform — fully inside the shop, layers stacked with no overlap
+  // Interior display platform — fully inside the shop
   const platformW = Math.min(winW - 0.55, 4.0);
   const platformDepth = 1.05;
-  const platformZ = -0.65; // stays behind the glass (~0.5+)
+  const platformZ = -0.65;
   const floorY = 0.16;
   const deckH = 0.07;
   const riserH = 0.42;
@@ -250,13 +257,15 @@ export function createStorefront(coverMap) {
   );
   const platformTop = floorY + riserH + deckH;
 
-  // --- Door with a real glass opening (no wood behind the pane) ---
+  // --- Recessed door entry (alcove so a person can stand outside) ---
+  const recessDepth = 0.75;
   const jambW = 0.1;
   const headH = 0.12;
   const doorLeafW = doorOpenW - jambW * 2;
   const doorH = groundTop - headH - 0.02;
   const doorY = 0.02 + doorH / 2;
-  const doorZ = 0.45;
+  const doorZ = pierFront - recessDepth; // set back from facade
+  const recessMidZ = pierFront - recessDepth / 2;
   const stileW = 0.14;
   const glassW = doorLeafW - stileW * 2;
   const glassH = 1.55;
@@ -264,40 +273,46 @@ export function createStorefront(coverMap) {
   const railH = 0.12;
   const bottomPanelH = glassCY - glassH / 2 - railH - 0.02;
   const topPanelH = doorY + doorH / 2 - (glassCY + glassH / 2 + railH);
+  const recessWallMat = mat({ color: '#6a5244', roughness: 0.88 });
 
-  // Outer frame
-  root.add(box(doorOpenW, headH, 0.24, darkMetal, doorX, doorY + doorH / 2 + headH / 2, 0.4));
-  root.add(box(jambW, doorH + headH, 0.24, darkMetal, doorX - doorOpenW / 2 + jambW / 2, doorY + headH / 2, 0.4));
-  root.add(box(jambW, doorH + headH, 0.24, darkMetal, doorX + doorOpenW / 2 - jambW / 2, doorY + headH / 2, 0.4));
+  // Alcove side walls + soffit + landing
+  root.add(box(0.08, groundTop, recessDepth, recessWallMat, doorX - doorOpenW / 2 + 0.04, groundTop / 2, recessMidZ));
+  root.add(box(0.08, groundTop, recessDepth, recessWallMat, doorX + doorOpenW / 2 - 0.04, groundTop / 2, recessMidZ));
+  root.add(box(doorOpenW, 0.08, recessDepth, darkMetal, doorX, groundTop - 0.04, recessMidZ));
+  root.add(box(doorOpenW + 0.1, 0.05, recessDepth + 0.2, mat({ color: '#8a8e92', roughness: 0.9 }), doorX, 0.04, recessMidZ + 0.05));
 
-  // Door leaf parts (opening left for glass)
-  root.add(box(stileW, doorH, 0.09, woodMat, doorX - doorLeafW / 2 + stileW / 2, doorY, doorZ));
-  root.add(box(stileW, doorH, 0.09, woodMat, doorX + doorLeafW / 2 - stileW / 2, doorY, doorZ));
+  // Outer frame at the recessed door plane
+  root.add(box(doorOpenW, headH, 0.2, darkMetal, doorX, doorY + doorH / 2 + headH / 2, doorZ));
+  root.add(box(jambW, doorH + headH, 0.2, darkMetal, doorX - doorOpenW / 2 + jambW / 2, doorY + headH / 2, doorZ));
+  root.add(box(jambW, doorH + headH, 0.2, darkMetal, doorX + doorOpenW / 2 - jambW / 2, doorY + headH / 2, doorZ));
+
+  // Door leaf parts
+  root.add(box(stileW, doorH, 0.09, woodMat, doorX - doorLeafW / 2 + stileW / 2, doorY, doorZ - 0.02));
+  root.add(box(stileW, doorH, 0.09, woodMat, doorX + doorLeafW / 2 - stileW / 2, doorY, doorZ - 0.02));
   if (bottomPanelH > 0.05) {
-    root.add(box(glassW, bottomPanelH, 0.09, woodMat, doorX, 0.02 + bottomPanelH / 2, doorZ));
+    root.add(box(glassW, bottomPanelH, 0.09, woodMat, doorX, 0.02 + bottomPanelH / 2, doorZ - 0.02));
   }
-  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY - glassH / 2 - railH / 2, doorZ));
-  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH / 2, doorZ));
+  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY - glassH / 2 - railH / 2, doorZ - 0.02));
+  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH / 2, doorZ - 0.02));
   if (topPanelH > 0.05) {
     root.add(
-      box(glassW, topPanelH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH + topPanelH / 2, doorZ)
+      box(glassW, topPanelH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH + topPanelH / 2, doorZ - 0.02)
     );
   }
 
-  // Glass only in the opening
   const doorGlass = new THREE.Mesh(new THREE.PlaneGeometry(glassW - 0.02, glassH - 0.02), glassMat);
-  doorGlass.position.set(doorX, glassCY, doorZ + 0.02);
+  doorGlass.position.set(doorX, glassCY, doorZ + 0.03);
   doorGlass.renderOrder = 2;
   root.add(doorGlass);
 
-  root.add(box(0.07, 0.5, 0.07, brass, doorX - doorLeafW / 2 + 0.16, doorY - 0.1, doorZ + 0.1));
+  root.add(box(0.07, 0.5, 0.07, brass, doorX - doorLeafW / 2 + 0.16, doorY - 0.1, doorZ + 0.08));
   root.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), brass)).position.set(
     doorX - doorLeafW / 2 + 0.16,
     doorY + 0.15,
-    doorZ + 0.14
+    doorZ + 0.12
   );
-  root.add(box(doorLeafW - 0.04, 0.28, 0.04, brass, doorX, 0.2, doorZ + 0.06));
-  root.add(box(doorOpenW, 0.03, 0.4, darkMetal, doorX, 0.03, 0.45));
+  root.add(box(doorLeafW - 0.04, 0.28, 0.04, brass, doorX, 0.2, doorZ + 0.04));
+  root.add(box(doorOpenW, 0.03, 0.25, darkMetal, doorX, 0.03, doorZ));
 
   const openTex = openSignTexture();
   const openSign = new THREE.Mesh(
@@ -313,7 +328,7 @@ export function createStorefront(coverMap) {
     new THREE.PlaneGeometry(0.65, 0.34),
     mat({ map: hoursTex, roughness: 0.6 })
   );
-  hours.position.set(rightPierX, 1.55, 0.48);
+  hours.position.set(rightPierX, 1.55, pierFront + 0.02);
   root.add(hours);
 
   // --- Main storefront sign ---
@@ -538,8 +553,8 @@ export function createStorefront(coverMap) {
   root.add(box(0.05, 0.55, 0.05, darkMetal, 4.9, 0.35, 1.5));
   root.add(box(0.05, 0.55, 0.05, darkMetal, 6.1, 0.35, 1.5));
 
-  // Doormat
-  root.add(box(1.15, 0.03, 0.7, mat({ color: '#3a4a3a', roughness: 1 }), doorX, 0.14, 1.05));
+  // Doormat on the recessed landing
+  root.add(box(1.1, 0.03, 0.55, mat({ color: '#3a4a3a', roughness: 1 }), doorX, 0.08, recessMidZ + 0.05));
 
   // Address number on right pier
   const addr = makeCanvasNumber('17');
@@ -547,7 +562,7 @@ export function createStorefront(coverMap) {
     new THREE.PlaneGeometry(0.32, 0.26),
     mat({ map: addr, roughness: 0.4, metalness: 0.3 })
   );
-  addrPlate.position.set(rightPierX, 2.15, 0.48);
+  addrPlate.position.set(rightPierX, 2.15, pierFront + 0.02);
   root.add(addrPlate);
 
   // Window LED strip inside top
@@ -572,6 +587,37 @@ export function createStorefront(coverMap) {
     root.add(puddle);
   }
 
+  // Books on the display platform floor (beside the pedestal)
+  const stackColors = [WAVE, '#1a3c4a', '#4a3728', '#2c3e50'];
+  for (let i = 0; i < 4; i++) {
+    addBook(
+      root,
+      winX - 1.35 + i * 0.2,
+      platformTop + 0.14 + i * 0.03,
+      platformZ - 0.15,
+      0.18,
+      0.26,
+      0.04,
+      stackColors[i],
+      '수영',
+      0.4 + i * 0.1
+    );
+  }
+  for (let i = 0; i < 5; i++) {
+    addBook(
+      root,
+      winX + 1.25 + i * 0.08,
+      platformTop + 0.18 + (i % 3) * 0.02,
+      platformZ + 0.05,
+      0.05,
+      0.3 + (i % 3) * 0.04,
+      0.2,
+      stackColors[i % stackColors.length],
+      '책',
+      0.05
+    );
+  }
+
   // Security camera
   root.add(box(0.18, 0.1, 0.28, darkMetal, 4.6, 3.55, 0.55));
   const camLens = new THREE.Mesh(
@@ -583,7 +629,7 @@ export function createStorefront(coverMap) {
 
   // Wall lantern on mid pier beside door
   const lantern = new THREE.Group();
-  lantern.position.set(midPierX, 2.55, 0.55);
+  lantern.position.set(midPierX, 2.55, pierFront + 0.12);
   lantern.add(box(0.08, 0.25, 0.08, brass, 0, 0.25, 0));
   const lanternCage = box(0.28, 0.4, 0.28, darkMetal, 0, 0, 0.05);
   lantern.add(lanternCage);

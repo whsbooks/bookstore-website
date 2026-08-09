@@ -25,6 +25,8 @@ scene.fog = new THREE.FogExp2('#c5d7e8', 0.012);
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
 const desktopCam = new THREE.Vector3(6.2, 7.8, 11.5);
 const desktopTarget = new THREE.Vector3(0.2, 2.4, -0.8);
+const mobileCam = new THREE.Vector3(5.0, 7.4, 13.8);
+const mobileTarget = new THREE.Vector3(0.15, 2.75, 0.15);
 camera.position.copy(desktopCam);
 
 const controls = new OrbitControls(camera, canvas);
@@ -33,26 +35,44 @@ controls.dampingFactor = 0.055;
 controls.enableZoom = false;
 controls.enablePan = false;
 controls.minDistance = 8;
-controls.maxDistance = 22;
+controls.maxDistance = 24;
 controls.minPolarAngle = Math.PI * 0.22;
-controls.maxPolarAngle = Math.PI * 0.42;
-controls.minAzimuthAngle = -0.15;
-controls.maxAzimuthAngle = 0.85;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.minAzimuthAngle = -0.45;
+controls.maxAzimuthAngle = 0.75;
 controls.target.copy(desktopTarget);
 controls.update();
 
 let isMobileView = false;
 let wasMobile = null;
+const mobileOrbit = {
+  active: false,
+  startX: 0,
+  startY: 0,
+  mode: null, // null | 'orbit' | 'scroll'
+  spherical: new THREE.Spherical(),
+  offset: new THREE.Vector3(),
+};
+
+function syncMobileOrbitFromCamera() {
+  mobileOrbit.offset.copy(camera.position).sub(controls.target);
+  mobileOrbit.spherical.setFromVector3(mobileOrbit.offset);
+}
 
 function applyResponsiveCamera() {
   const mobile = window.innerWidth < 800;
+  const switching = wasMobile !== mobile;
   isMobileView = mobile;
 
   if (mobile) {
+    // Custom horizontal drag + native vertical scroll (OrbitControls off)
     controls.enabled = false;
-    camera.fov = window.innerWidth < 420 ? 54 : 50;
-    camera.position.set(2.4, 11.2, 16.8);
-    controls.target.set(0, 1.8, -0.2);
+    camera.fov = window.innerWidth < 420 ? 50 : 46;
+    if (switching || wasMobile === null) {
+      camera.position.copy(mobileCam);
+      controls.target.copy(mobileTarget);
+      syncMobileOrbitFromCamera();
+    }
   } else {
     controls.enabled = true;
     camera.fov = 42;
@@ -73,6 +93,75 @@ function resize() {
   applyResponsiveCamera();
   renderer.setSize(width, height, false);
 }
+
+canvas.addEventListener(
+  'touchstart',
+  (e) => {
+    if (!isMobileView || e.touches.length !== 1) return;
+    mobileOrbit.active = true;
+    mobileOrbit.mode = null;
+    mobileOrbit.startX = e.touches[0].clientX;
+    mobileOrbit.startY = e.touches[0].clientY;
+    syncMobileOrbitFromCamera();
+  },
+  { passive: true }
+);
+
+canvas.addEventListener(
+  'touchmove',
+  (e) => {
+    if (!isMobileView || !mobileOrbit.active || e.touches.length !== 1) return;
+    const x = e.touches[0].clientX;
+    const y = e.touches[0].clientY;
+    const dx = x - mobileOrbit.startX;
+    const dy = y - mobileOrbit.startY;
+
+    if (!mobileOrbit.mode) {
+      if (Math.abs(dx) + Math.abs(dy) < 10) return;
+      mobileOrbit.mode = Math.abs(dx) > Math.abs(dy) * 1.05 ? 'orbit' : 'scroll';
+      mobileOrbit.startX = x;
+      mobileOrbit.startY = y;
+      if (mobileOrbit.mode === 'scroll') return;
+    }
+
+    if (mobileOrbit.mode === 'scroll') return;
+
+    e.preventDefault();
+    const deltaX = x - mobileOrbit.startX;
+    mobileOrbit.startX = x;
+    mobileOrbit.spherical.theta -= deltaX * 0.005;
+    mobileOrbit.spherical.theta = Math.max(
+      -0.45,
+      Math.min(0.75, mobileOrbit.spherical.theta)
+    );
+    mobileOrbit.spherical.phi = Math.max(
+      Math.PI * 0.22,
+      Math.min(Math.PI * 0.48, mobileOrbit.spherical.phi)
+    );
+    mobileOrbit.offset.setFromSpherical(mobileOrbit.spherical);
+    camera.position.copy(controls.target).add(mobileOrbit.offset);
+    camera.lookAt(controls.target);
+  },
+  { passive: false }
+);
+
+canvas.addEventListener(
+  'touchend',
+  () => {
+    mobileOrbit.active = false;
+    mobileOrbit.mode = null;
+  },
+  { passive: true }
+);
+
+canvas.addEventListener(
+  'touchcancel',
+  () => {
+    mobileOrbit.active = false;
+    mobileOrbit.mode = null;
+  },
+  { passive: true }
+);
 
 {
   const skyGeo = new THREE.SphereGeometry(60, 32, 16);
