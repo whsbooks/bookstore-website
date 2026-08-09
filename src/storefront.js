@@ -90,19 +90,21 @@ export function createStorefront(coverMap) {
   const interiorWall = mat({ color: '#f3eee4', roughness: 0.9 });
   const floorMat = mat({ color: '#5a4536', roughness: 0.55, metalness: 0.05 });
 
-  // --- Ground ---
-  const sidewalk = box(18, 0.12, 8, mat({ map: sideWalk, roughness: 0.85 }), 0, 0.06, 2.5);
-  root.add(sidewalk);
+  // --- Ground: road out front, sidewalk at the store, building not on asphalt ---
+  // Layout (looking toward facade): camera → road → curb → sidewalk → storefront
+  const sidewalkMat = mat({ map: sideWalk, roughness: 0.85 });
+  const sidewalkDepth = 4.2;
+  const sidewalkZ = 2.35; // front of facade (~0.4) to curb (~4.45)
+  root.add(box(18, 0.12, sidewalkDepth, sidewalkMat, 0, 0.06, sidewalkZ));
 
-  const curb = box(18, 0.22, 0.35, mat({ color: '#6e7276', roughness: 0.9 }), 0, 0.11, -1.55);
-  root.add(curb);
+  const curbZ = sidewalkZ + sidewalkDepth / 2 + 0.18;
+  root.add(box(18, 0.2, 0.36, mat({ color: '#6e7276', roughness: 0.9 }), 0, 0.1, curbZ));
 
-  const road = box(18, 0.08, 10, mat({ map: roadMap, roughness: 0.95 }), 0, 0.04, -6.8);
-  root.add(road);
-
-  // Road center line
+  const roadDepth = 9;
+  const roadZ = curbZ + 0.18 + roadDepth / 2;
+  root.add(box(18, 0.08, roadDepth, mat({ map: roadMap, roughness: 0.95 }), 0, 0.04, roadZ));
   for (let i = -3; i <= 3; i++) {
-    root.add(box(1.2, 0.02, 0.12, mat({ color: '#c9b86a', roughness: 0.8 }), i * 2.4, 0.09, -6.8));
+    root.add(box(1.2, 0.02, 0.12, mat({ color: '#c9b86a', roughness: 0.8 }), i * 2.4, 0.09, roadZ));
   }
 
   // --- Building shell ---
@@ -175,24 +177,41 @@ export function createStorefront(coverMap) {
     root.add(box(1.15, 1.3, 0.04, mat({ color: '#c9b8a0', roughness: 0.95, transparent: true, opacity: 0.55 }), x, 5.85, 0.3));
   }
 
-  // --- Main display window ---
+  // --- Main display window (frame pieces do not overlap — prevents flashing) ---
   const winH = 3.2;
   const winY = 2.05;
-  const frameT = 0.12;
+  const frameT = 0.1;
+  const frameD = 0.16;
+  const frameZ = 0.44;
+  const mullionT = 0.06;
+  const mullionZ = 0.5;
 
-  root.add(box(winW + frameT * 2, frameT, 0.22, darkMetal, winX, winY + winH / 2 + frameT / 2, 0.42));
-  root.add(box(winW + frameT * 2, frameT, 0.22, darkMetal, winX, winY - winH / 2 - frameT / 2, 0.42));
-  root.add(box(frameT, winH, 0.22, darkMetal, winX - winW / 2 - frameT / 2, winY, 0.42));
-  root.add(box(frameT, winH, 0.22, darkMetal, winX + winW / 2 + frameT / 2, winY, 0.42));
-  root.add(box(0.07, winH, 0.1, darkMetal, winX, winY, 0.48));
-  root.add(box(winW, 0.07, 0.1, darkMetal, winX, winY, 0.48));
+  // Outer frame: sides stop short of top/bottom so corners don't double-draw
+  root.add(box(winW + frameT * 2, frameT, frameD, darkMetal, winX, winY + winH / 2 + frameT / 2, frameZ));
+  root.add(box(winW + frameT * 2, frameT, frameD, darkMetal, winX, winY - winH / 2 - frameT / 2, frameZ));
+  root.add(box(frameT, winH, frameD, darkMetal, winX - winW / 2 - frameT / 2, winY, frameZ));
+  root.add(box(frameT, winH, frameD, darkMetal, winX + winW / 2 + frameT / 2, winY, frameZ));
 
-  const paneW = winW / 2 - 0.08;
-  const paneH = winH / 2 - 0.08;
-  for (const ox of [-paneW / 2 - 0.04, paneW / 2 + 0.04]) {
-    for (const oy of [-paneH / 2 - 0.04, paneH / 2 + 0.04]) {
+  // Cross mullions: vertical full; horizontal as two halves (no crossing volume)
+  root.add(box(mullionT, winH, mullionT, darkMetal, winX, winY, mullionZ));
+  const halfW = (winW - mullionT) / 2;
+  root.add(box(halfW, mullionT, mullionT, darkMetal, winX - (halfW + mullionT) / 2, winY, mullionZ));
+  root.add(box(halfW, mullionT, mullionT, darkMetal, winX + (halfW + mullionT) / 2, winY, mullionZ));
+
+  // Glass panes inset inside each quadrant (gap from mullions avoids z-fight)
+  const gap = 0.04;
+  const paneW = halfW - gap * 2;
+  const paneH = winH / 2 - mullionT / 2 - gap * 2;
+  const glassZ = 0.52;
+  for (const sx of [-1, 1]) {
+    for (const sy of [-1, 1]) {
       const pane = new THREE.Mesh(new THREE.PlaneGeometry(paneW, paneH), glassMat);
-      pane.position.set(winX + ox, winY + oy, 0.5);
+      pane.position.set(
+        winX + sx * (halfW + mullionT) / 2,
+        winY + sy * (paneH / 2 + mullionT / 2 + gap),
+        glassZ
+      );
+      pane.renderOrder = 2;
       root.add(pane);
     }
   }
@@ -203,46 +222,68 @@ export function createStorefront(coverMap) {
   root.add(
     box(winW - 0.15, backH, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.18 }), winX, backY, -1.35)
   );
-  // Solid filler between backboard top and lintel (hides interior slab seams)
   root.add(box(winW - 0.1, 0.35, 0.5, plasterMat, winX, groundTop - 0.15, -0.6));
 
   root.add(box(winW + 0.2, 0.12, 0.45, woodMat, winX, winY - winH / 2 - 0.05, 0.35));
   root.add(box(Math.min(winW - 0.3, 4.6), 0.15, 1.5, lightWoodMat, winX, 0.55, -0.2));
   root.add(box(Math.min(winW - 0.3, 4.6), 0.45, 1.45, mat({ color: '#d7c4a8', roughness: 0.75 }), winX, 0.3, -0.2));
 
-  // --- Door: leaf fills the opening; frame wraps outside it; no raised step ---
+  // --- Door with a real glass opening (no wood behind the pane) ---
   const jambW = 0.1;
   const headH = 0.12;
   const doorLeafW = doorOpenW - jambW * 2;
   const doorH = groundTop - headH - 0.02;
   const doorY = 0.02 + doorH / 2;
   const doorZ = 0.45;
+  const stileW = 0.14;
+  const glassW = doorLeafW - stileW * 2;
+  const glassH = 1.55;
+  const glassCY = doorY + 0.35;
+  const railH = 0.12;
+  const bottomPanelH = glassCY - glassH / 2 - railH - 0.02;
+  const topPanelH = doorY + doorH / 2 - (glassCY + glassH / 2 + railH);
 
-  // Outer frame around the leaf
+  // Outer frame
   root.add(box(doorOpenW, headH, 0.24, darkMetal, doorX, doorY + doorH / 2 + headH / 2, 0.4));
   root.add(box(jambW, doorH + headH, 0.24, darkMetal, doorX - doorOpenW / 2 + jambW / 2, doorY + headH / 2, 0.4));
   root.add(box(jambW, doorH + headH, 0.24, darkMetal, doorX + doorOpenW / 2 - jambW / 2, doorY + headH / 2, 0.4));
 
-  // Door leaf fully covers the clear opening
-  const door = box(doorLeafW, doorH, 0.09, woodMat, doorX, doorY, doorZ);
-  root.add(door);
-  root.add(box(doorLeafW - 0.28, 1.5, 0.03, glassMat, doorX, doorY + 0.4, doorZ + 0.06));
+  // Door leaf parts (opening left for glass)
+  root.add(box(stileW, doorH, 0.09, woodMat, doorX - doorLeafW / 2 + stileW / 2, doorY, doorZ));
+  root.add(box(stileW, doorH, 0.09, woodMat, doorX + doorLeafW / 2 - stileW / 2, doorY, doorZ));
+  if (bottomPanelH > 0.05) {
+    root.add(box(glassW, bottomPanelH, 0.09, woodMat, doorX, 0.02 + bottomPanelH / 2, doorZ));
+  }
+  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY - glassH / 2 - railH / 2, doorZ));
+  root.add(box(glassW, railH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH / 2, doorZ));
+  if (topPanelH > 0.05) {
+    root.add(
+      box(glassW, topPanelH, 0.09, woodMat, doorX, glassCY + glassH / 2 + railH + topPanelH / 2, doorZ)
+    );
+  }
+
+  // Glass only in the opening
+  const doorGlass = new THREE.Mesh(new THREE.PlaneGeometry(glassW - 0.02, glassH - 0.02), glassMat);
+  doorGlass.position.set(doorX, glassCY, doorZ + 0.02);
+  doorGlass.renderOrder = 2;
+  root.add(doorGlass);
+
   root.add(box(0.07, 0.5, 0.07, brass, doorX - doorLeafW / 2 + 0.16, doorY - 0.1, doorZ + 0.1));
   root.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), brass)).position.set(
     doorX - doorLeafW / 2 + 0.16,
     doorY + 0.15,
     doorZ + 0.14
   );
-  root.add(box(doorLeafW - 0.04, 0.28, 0.04, brass, doorX, 0.22, doorZ + 0.06));
-  // Flat sill flush with sidewalk (not a step)
+  root.add(box(doorLeafW - 0.04, 0.28, 0.04, brass, doorX, 0.2, doorZ + 0.06));
   root.add(box(doorOpenW, 0.03, 0.4, darkMetal, doorX, 0.03, 0.45));
 
   const openTex = openSignTexture();
   const openSign = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.5, 0.32),
-    mat({ map: openTex, roughness: 0.5, emissive: '#0a4020', emissiveIntensity: 0.25 })
+    new THREE.PlaneGeometry(0.48, 0.3),
+    mat({ map: openTex, roughness: 0.5, emissive: '#0a4020', emissiveIntensity: 0.25, depthWrite: false })
   );
-  openSign.position.set(doorX, doorY + 0.9, doorZ + 0.08);
+  openSign.position.set(doorX, glassCY + 0.35, doorZ + 0.05);
+  openSign.renderOrder = 3;
   root.add(openSign);
 
   const hoursTex = hoursTexture();
@@ -499,8 +540,6 @@ export function createStorefront(coverMap) {
   // Neighbor buildings (simple depth)
   root.add(box(4, 8, 5, mat({ color: '#5a4a42', roughness: 0.9 }), -9.5, 4, -2));
   root.add(box(5, 6.5, 5.5, mat({ color: '#4a5560', roughness: 0.9 }), 10, 3.25, -2.2));
-  // Neighbor signs
-  root.add(box(2.5, 0.5, 0.1, mat({ color: '#8b1e1e', roughness: 0.5 }), -9.5, 5.5, 0.55));
   root.add(box(2.2, 0.45, 0.1, mat({ color: '#1e4a6b', roughness: 0.5 }), 10, 4.8, 0.55));
 
   // Wet reflection strips on sidewalk
@@ -579,8 +618,8 @@ export function createStorefront(coverMap) {
   root.add(banner);
   root.add(box(0.6, 0.06, 0.06, darkMetal, -5.35, 3.65, 0.35));
 
-  // Mail slot on door
-  root.add(box(0.45, 0.08, 0.04, brass, doorX, 1.15, 0.55));
+  // Mail slot on lower door panel
+  root.add(box(0.45, 0.08, 0.04, brass, doorX, Math.max(0.55, bottomPanelH * 0.55), doorZ + 0.06));
 
   // Interior reading chair (simple)
   const chair = new THREE.Group();
