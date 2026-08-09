@@ -91,9 +91,11 @@ export function createStorefront(coverMap) {
 
   // --- Ground: road out front, sidewalk at the store, building not on asphalt ---
   // Layout (looking toward facade): camera → road → curb → sidewalk → storefront
+  // Keep sidewalk in front of the facade face so it never z-fights the door landing
   const sidewalkMat = mat({ map: sideWalk, roughness: 0.85 });
-  const sidewalkDepth = 4.2;
-  const sidewalkZ = 2.35; // front of facade (~0.4) to curb (~4.45)
+  const sidewalkFront = 0.5;
+  const sidewalkDepth = 4.0;
+  const sidewalkZ = sidewalkFront + sidewalkDepth / 2;
   root.add(box(18, 0.12, sidewalkDepth, sidewalkMat, 0, 0.06, sidewalkZ));
 
   const curbZ = sidewalkZ + sidewalkDepth / 2 + 0.18;
@@ -264,9 +266,11 @@ export function createStorefront(coverMap) {
   root.add(box(0.08, recessH, recessDepth, recessWallMat, doorX + doorOpenW / 2 - 0.04, landTop + recessH / 2, recessMidZ));
   // Soffit under the lintel — keep clear of the brick lintel face
   root.add(box(doorOpenW - 0.04, 0.07, recessDepth - 0.04, darkMetal, doorX, groundTop - 0.1, recessMidZ));
-  // Landing flush with sidewalk
+  // Landing only inside the alcove (does not overlap the street sidewalk — prevents flashing)
+  const landDepth = recessDepth - 0.1;
+  const landZ = doorZ + landDepth / 2 + 0.04;
   root.add(
-    box(doorOpenW + 0.12, 0.06, recessDepth + 0.28, mat({ color: '#8a8e92', roughness: 0.9 }), doorX, landTop - 0.03, recessMidZ + 0.06)
+    box(doorOpenW - 0.1, 0.08, landDepth, mat({ color: '#8a8e92', roughness: 0.9 }), doorX, landTop - 0.04, landZ)
   );
 
   // Frame: head full width; jambs only between head and landing (no corner overlap / flashing)
@@ -524,8 +528,8 @@ export function createStorefront(coverMap) {
   lamp.add(lampGlow);
   root.add(lamp);
 
-  // Doormat on the recessed landing
-  root.add(box(1.1, 0.03, 0.55, mat({ color: '#3a4a3a', roughness: 1 }), doorX, landTop + 0.02, recessMidZ + 0.05));
+  // Doormat on the recessed landing (inside alcove only)
+  root.add(box(1.0, 0.025, Math.min(0.45, landDepth - 0.1), mat({ color: '#3a4a3a', roughness: 1 }), doorX, landTop + 0.015, landZ));
 
   // Address number on right pier
   const addr = makeCanvasNumber('17');
