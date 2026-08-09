@@ -23,21 +23,56 @@ scene.background = new THREE.Color('#b9d0e4');
 scene.fog = new THREE.FogExp2('#c5d7e8', 0.012);
 
 const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
-// Elevated three-quarter view so the whole storefront reads clearly
-camera.position.set(6.2, 7.8, 11.5);
+const desktopCam = new THREE.Vector3(6.2, 7.8, 11.5);
+const desktopTarget = new THREE.Vector3(0.2, 2.4, -0.8);
+camera.position.copy(desktopCam);
 
 const controls = new OrbitControls(camera, canvas);
 controls.enableDamping = true;
 controls.dampingFactor = 0.055;
 controls.enableZoom = false;
+controls.enablePan = false;
 controls.minDistance = 8;
 controls.maxDistance = 22;
 controls.minPolarAngle = Math.PI * 0.22;
 controls.maxPolarAngle = Math.PI * 0.42;
 controls.minAzimuthAngle = -0.15;
 controls.maxAzimuthAngle = 0.85;
-controls.target.set(0.2, 2.4, -0.8);
+controls.target.copy(desktopTarget);
 controls.update();
+
+let isMobileView = false;
+let wasMobile = null;
+
+function applyResponsiveCamera() {
+  const mobile = window.innerWidth < 800;
+  isMobileView = mobile;
+
+  if (mobile) {
+    controls.enabled = false;
+    camera.fov = window.innerWidth < 420 ? 54 : 50;
+    camera.position.set(2.4, 11.2, 16.8);
+    controls.target.set(0, 1.8, -0.2);
+  } else {
+    controls.enabled = true;
+    camera.fov = 42;
+    if (wasMobile !== false) {
+      camera.position.copy(desktopCam);
+      controls.target.copy(desktopTarget);
+    }
+  }
+  wasMobile = mobile;
+  controls.update();
+  camera.updateProjectionMatrix();
+}
+
+function resize() {
+  const width = hero.clientWidth;
+  const height = hero.clientHeight;
+  camera.aspect = width / Math.max(height, 1);
+  applyResponsiveCamera();
+  renderer.setSize(width, height, false);
+}
 
 {
   const skyGeo = new THREE.SphereGeometry(60, 32, 16);
@@ -112,14 +147,6 @@ for (const [x, z] of [
   scene.add(pl);
 }
 
-function resize() {
-  const width = hero.clientWidth;
-  const height = hero.clientHeight;
-  camera.aspect = width / Math.max(height, 1);
-  camera.updateProjectionMatrix();
-  renderer.setSize(width, height, false);
-}
-
 async function init() {
   const loader = new THREE.TextureLoader();
   const coverMap = await loader.loadAsync(`${import.meta.env.BASE_URL}cover-01.png`);
@@ -167,10 +194,9 @@ async function init() {
     t += 0.006;
     particles.position.y = Math.sin(t * 0.4) * 0.08;
     if (book) {
-      book.position.y = 1.14 + Math.sin(t * 0.8) * 0.01;
       book.rotation.y = -0.12 + Math.sin(t * 0.45) * 0.03;
     }
-    if (!dragging) {
+    if (!isMobileView && !dragging) {
       camera.position.x += Math.sin(t * 0.2) * 0.0004;
       camera.position.y += Math.cos(t * 0.16) * 0.00025;
     }

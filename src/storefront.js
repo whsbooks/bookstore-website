@@ -415,13 +415,6 @@ export function createStorefront(coverMap) {
   featured.castShadow = true;
   display.add(featured);
 
-  // Second copy slightly behind
-  const copy2 = featured.clone();
-  copy2.position.set(0.12, 1.1, -0.12);
-  copy2.rotation.y = 0.28;
-  copy2.scale.set(0.92, 0.92, 0.92);
-  display.add(copy2);
-
   display.add(
     box(0.5, 0.02, 0.35, mat({ color: '#cfd8e0', roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.45 }), 0, 0.76, 0.05)
   );
@@ -579,38 +572,6 @@ export function createStorefront(coverMap) {
     root.add(puddle);
   }
 
-  // Extra window-table books (supporting display) — on the interior platform only
-  const stackColors = [WAVE, '#1a3c4a', '#4a3728', '#2c3e50'];
-  for (let i = 0; i < 4; i++) {
-    addBook(
-      root,
-      winX - 1.35 + i * 0.2,
-      platformTop + 0.14 + i * 0.03,
-      platformZ - 0.15,
-      0.18,
-      0.26,
-      0.04,
-      stackColors[i],
-      '수영',
-      0.4 + i * 0.1
-    );
-  }
-  // Standing books beside pedestal
-  for (let i = 0; i < 5; i++) {
-    addBook(
-      root,
-      winX + 1.25 + i * 0.08,
-      platformTop + 0.18 + (i % 3) * 0.02,
-      platformZ + 0.05,
-      0.05,
-      0.3 + (i % 3) * 0.04,
-      0.2,
-      stackColors[i % stackColors.length],
-      '책',
-      0.05
-    );
-  }
-
   // Security camera
   root.add(box(0.18, 0.1, 0.28, darkMetal, 4.6, 3.55, 0.55));
   const camLens = new THREE.Mesh(
@@ -695,7 +656,6 @@ export function createStorefront(coverMap) {
     root.add(tile);
   }
 
-  // Spotlights for display (invisible helpers — real lights added in main)
   root.userData.displayFocus = new THREE.Vector3(winX, 1.5, 0.1);
   root.userData.featuredBook = featured;
 
