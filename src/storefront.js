@@ -138,33 +138,41 @@ export function createStorefront(coverMap) {
   const winW = midPierX - midPierW / 2 - openLeft; // ~5.4 span available
   const winX = openLeft + winW / 2;
 
-  root.add(box(leftPierW, buildingH, 0.55, brickMat, leftPierX, buildingH / 2, facadeZ));
-  root.add(box(rightPierW, buildingH, 0.55, brickMat, rightPierX, buildingH / 2, facadeZ));
-  // Mid pier (between window and door), full height under upper band
-  root.add(box(midPierW, 3.75, 0.55, brickMat, midPierX, 1.875, facadeZ));
-  // Lintel / upper band above window + door
-  root.add(box(openRight - openLeft, 1.35, 0.55, brickMat, (openLeft + openRight) / 2, 4.65, facadeZ));
-  // Top story facade
-  root.add(box(buildingW, 2.4, 0.55, plasterMat, 0, 6.0, facadeZ));
-  // Base / plinth — split so door opening stays clear
+  const groundTop = 3.9;
+  const lintelH = 0.85;
+  const lintelY = groundTop + lintelH / 2;
+  const topStoryBottom = lintelY + lintelH / 2;
+  const topStoryH = buildingH - topStoryBottom;
+  const topStoryY = topStoryBottom + topStoryH / 2;
+
+  root.add(box(leftPierW, groundTop + lintelH, 0.55, brickMat, leftPierX, (groundTop + lintelH) / 2, facadeZ));
+  root.add(box(rightPierW, groundTop + lintelH, 0.55, brickMat, rightPierX, (groundTop + lintelH) / 2, facadeZ));
+
+  root.add(box(midPierW, groundTop, 0.55, brickMat, midPierX, groundTop / 2, facadeZ));
+  root.add(box(openRight - openLeft, lintelH, 0.55, brickMat, (openLeft + openRight) / 2, lintelY, facadeZ));
+  // Upper plaster sits cleanly above the brick — no shared faces to flash
+  root.add(box(buildingW, topStoryH, 0.55, plasterMat, 0, topStoryY, facadeZ));
+
+  // Base plinth under window + piers only (door opening flush with sidewalk — no step)
   const plinthMat = mat({ color: '#3a342e', roughness: 0.8 });
-  root.add(box(winW + midPierW + 0.1, 0.45, 0.7, plinthMat, winX + midPierW * 0.15, 0.22, 0.22));
-  root.add(box(rightPierW + 0.15, 0.45, 0.7, plinthMat, rightPierX, 0.22, 0.22));
+  const plinthLeftW = openLeft - (-buildingW / 2) + winW + midPierW;
+  const plinthLeftX = -buildingW / 2 + plinthLeftW / 2;
+  root.add(box(plinthLeftW, 0.35, 0.55, plinthMat, plinthLeftX, 0.175, 0.18));
+  root.add(box(rightPierW, 0.35, 0.55, plinthMat, rightPierX, 0.175, 0.18));
 
   // Cornice
   root.add(box(buildingW + 0.4, 0.28, 0.9, darkMetal, 0, 7.15, 0.2));
   root.add(box(buildingW + 0.2, 0.18, 0.55, brass, 0, 6.95, 0.35));
 
-  // Second-floor windows
+  // Second-floor windows (set slightly forward of plaster)
   for (const x of [-2.8, 0, 2.8]) {
-    const frame = box(1.5, 1.7, 0.12, darkMetal, x, 5.85, 0.42);
+    const frame = box(1.5, 1.7, 0.12, darkMetal, x, 5.85, 0.4);
     root.add(frame);
-    const pane = box(1.25, 1.45, 0.05, glassMat, x, 5.85, 0.48);
+    const pane = box(1.25, 1.45, 0.05, glassMat, x, 5.85, 0.46);
     root.add(pane);
-    root.add(box(0.06, 1.45, 0.06, darkMetal, x, 5.85, 0.5));
-    root.add(box(1.25, 0.06, 0.06, darkMetal, x, 5.85, 0.5));
-    // Curtain hint
-    root.add(box(1.15, 1.3, 0.04, mat({ color: '#c9b8a0', roughness: 0.95, transparent: true, opacity: 0.55 }), x, 5.85, 0.35));
+    root.add(box(0.06, 1.45, 0.06, darkMetal, x, 5.85, 0.48));
+    root.add(box(1.25, 0.06, 0.06, darkMetal, x, 5.85, 0.48));
+    root.add(box(1.15, 1.3, 0.04, mat({ color: '#c9b8a0', roughness: 0.95, transparent: true, opacity: 0.55 }), x, 5.85, 0.3));
   }
 
   // --- Main display window ---
@@ -189,49 +197,54 @@ export function createStorefront(coverMap) {
     }
   }
 
+  // Interior backboard — stop below the lintel so nothing flashes above it
+  const backH = Math.min(winH - 0.1, groundTop - 0.35);
+  const backY = 0.2 + backH / 2;
   root.add(
-    box(winW - 0.2, winH - 0.15, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.2 }), winX, winY, -1.35)
+    box(winW - 0.15, backH, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.18 }), winX, backY, -1.35)
   );
+  // Solid filler between backboard top and lintel (hides interior slab seams)
+  root.add(box(winW - 0.1, 0.35, 0.5, plasterMat, winX, groundTop - 0.15, -0.6));
 
   root.add(box(winW + 0.2, 0.12, 0.45, woodMat, winX, winY - winH / 2 - 0.05, 0.35));
   root.add(box(Math.min(winW - 0.3, 4.6), 0.15, 1.5, lightWoodMat, winX, 0.55, -0.2));
   root.add(box(Math.min(winW - 0.3, 4.6), 0.45, 1.45, mat({ color: '#d7c4a8', roughness: 0.75 }), winX, 0.3, -0.2));
 
-  // --- Door (flush in opening between mid pier and right pier) ---
-  const doorH = 3.35;
-  const doorLeafW = doorOpenW - 0.22;
-  const doorY = doorH / 2 + 0.12;
-  const doorZ = 0.42;
+  // --- Door: leaf fills the opening; frame wraps outside it; no raised step ---
+  const jambW = 0.1;
+  const headH = 0.12;
+  const doorLeafW = doorOpenW - jambW * 2;
+  const doorH = groundTop - headH - 0.02;
+  const doorY = 0.02 + doorH / 2;
+  const doorZ = 0.45;
 
-  // Open door frame rails (not a solid slab)
-  root.add(box(doorOpenW, 0.12, 0.22, darkMetal, doorX, doorY + doorH / 2, doorZ));
-  root.add(box(0.11, doorH, 0.22, darkMetal, doorX - doorOpenW / 2 + 0.055, doorY, doorZ));
-  root.add(box(0.11, doorH, 0.22, darkMetal, doorX + doorOpenW / 2 - 0.055, doorY, doorZ));
+  // Outer frame around the leaf
+  root.add(box(doorOpenW, headH, 0.24, darkMetal, doorX, doorY + doorH / 2 + headH / 2, 0.4));
+  root.add(box(jambW, doorH + headH, 0.24, darkMetal, doorX - doorOpenW / 2 + jambW / 2, doorY + headH / 2, 0.4));
+  root.add(box(jambW, doorH + headH, 0.24, darkMetal, doorX + doorOpenW / 2 - jambW / 2, doorY + headH / 2, 0.4));
 
-  const door = box(doorLeafW, doorH - 0.08, 0.08, woodMat, doorX, doorY, 0.48);
+  // Door leaf fully covers the clear opening
+  const door = box(doorLeafW, doorH, 0.09, woodMat, doorX, doorY, doorZ);
   root.add(door);
-  // Door glass insert
-  root.add(box(doorLeafW - 0.35, 1.55, 0.03, glassMat, doorX, doorY + 0.45, 0.54));
-  // Handle on the latch side (toward mid pier / center)
-  root.add(box(0.07, 0.5, 0.07, brass, doorX - doorLeafW / 2 + 0.18, doorY - 0.15, 0.58));
+  root.add(box(doorLeafW - 0.28, 1.5, 0.03, glassMat, doorX, doorY + 0.4, doorZ + 0.06));
+  root.add(box(0.07, 0.5, 0.07, brass, doorX - doorLeafW / 2 + 0.16, doorY - 0.1, doorZ + 0.1));
   root.add(new THREE.Mesh(new THREE.SphereGeometry(0.06, 16, 16), brass)).position.set(
-    doorX - doorLeafW / 2 + 0.18,
-    doorY + 0.12,
-    0.62
+    doorX - doorLeafW / 2 + 0.16,
+    doorY + 0.15,
+    doorZ + 0.14
   );
-  root.add(box(doorLeafW - 0.05, 0.32, 0.04, brass, doorX, 0.35, 0.54));
-  root.add(box(doorOpenW + 0.1, 0.08, 0.55, darkMetal, doorX, 0.12, 0.5));
+  root.add(box(doorLeafW - 0.04, 0.28, 0.04, brass, doorX, 0.22, doorZ + 0.06));
+  // Flat sill flush with sidewalk (not a step)
+  root.add(box(doorOpenW, 0.03, 0.4, darkMetal, doorX, 0.03, 0.45));
 
-  // Open sign in door glass
   const openTex = openSignTexture();
   const openSign = new THREE.Mesh(
     new THREE.PlaneGeometry(0.5, 0.32),
     mat({ map: openTex, roughness: 0.5, emissive: '#0a4020', emissiveIntensity: 0.25 })
   );
-  openSign.position.set(doorX, doorY + 0.95, 0.56);
+  openSign.position.set(doorX, doorY + 0.9, doorZ + 0.08);
   root.add(openSign);
 
-  // Hours + address on the right pier face
   const hoursTex = hoursTexture();
   const hours = new THREE.Mesh(
     new THREE.PlaneGeometry(0.65, 0.34),
