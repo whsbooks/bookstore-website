@@ -78,23 +78,17 @@ export function createStorefront(coverMap) {
   const plasterMat = mat({ map: plasterMap, roughness: 0.88 });
   const darkMetal = mat({ color: '#1c2228', roughness: 0.35, metalness: 0.7 });
   const brass = mat({ color: '#b08d57', roughness: 0.35, metalness: 0.85 });
-  const glassMat = mat({
-    color: '#c5e0f0',
+  const glassMat = new THREE.MeshStandardMaterial({
+    color: '#f4fbff',
     transparent: true,
-    opacity: 0.14,
-    roughness: 0.04,
-    metalness: 0.2,
+    opacity: 0.1,
+    roughness: 0.05,
+    metalness: 0,
     depthWrite: false,
+    side: THREE.DoubleSide,
   });
-  const glassTint = mat({
-    color: '#7eb0cc',
-    transparent: true,
-    opacity: 0.08,
-    roughness: 0.1,
-    depthWrite: false,
-  });
-  const interiorWall = mat({ color: '#ebe4d8', roughness: 0.9 });
-  const floorMat = mat({ color: '#3d2c22', roughness: 0.55, metalness: 0.08 });
+  const interiorWall = mat({ color: '#f3eee4', roughness: 0.9 });
+  const floorMat = mat({ color: '#5a4536', roughness: 0.55, metalness: 0.05 });
 
   // --- Ground ---
   const sidewalk = box(18, 0.12, 8, mat({ map: sideWalk, roughness: 0.85 }), 0, 0.06, 2.5);
@@ -162,34 +156,39 @@ export function createStorefront(coverMap) {
   const winH = 3.2;
   const winX = -1.15;
   const winY = 2.05;
+  const frameT = 0.12;
 
-  // Window frame outer
-  root.add(box(winW + 0.22, winH + 0.22, 0.18, darkMetal, winX, winY, 0.42));
+  // Open frame only (not a solid slab — that made the window look black)
+  root.add(box(winW + frameT * 2, frameT, 0.22, darkMetal, winX, winY + winH / 2 + frameT / 2, 0.42));
+  root.add(box(winW + frameT * 2, frameT, 0.22, darkMetal, winX, winY - winH / 2 - frameT / 2, 0.42));
+  root.add(box(frameT, winH, 0.22, darkMetal, winX - winW / 2 - frameT / 2, winY, 0.42));
+  root.add(box(frameT, winH, 0.22, darkMetal, winX + winW / 2 + frameT / 2, winY, 0.42));
   // Mullions
-  root.add(box(0.08, winH, 0.1, darkMetal, winX, winY, 0.5));
-  root.add(box(winW, 0.08, 0.1, darkMetal, winX, winY, 0.5));
-  // Glass panes (4) — thin so the featured book reads clearly
+  root.add(box(0.07, winH, 0.1, darkMetal, winX, winY, 0.48));
+  root.add(box(winW, 0.07, 0.1, darkMetal, winX, winY, 0.48));
+
+  // Clear glass panes
   const paneW = winW / 2 - 0.08;
   const paneH = winH / 2 - 0.08;
   for (const ox of [-paneW / 2 - 0.04, paneW / 2 + 0.04]) {
     for (const oy of [-paneH / 2 - 0.04, paneH / 2 + 0.04]) {
-      root.add(box(paneW, paneH, 0.03, glassMat, winX + ox, winY + oy, 0.48));
-      // Soft outer reflection plane
-      const reflect = new THREE.Mesh(
-        new THREE.PlaneGeometry(paneW * 0.92, paneH * 0.92),
-        glassTint
-      );
-      reflect.position.set(winX + ox, winY + oy, 0.505);
-      root.add(reflect);
+      const pane = new THREE.Mesh(new THREE.PlaneGeometry(paneW, paneH), glassMat);
+      pane.position.set(winX + ox, winY + oy, 0.5);
+      root.add(pane);
     }
   }
+
+  // Bright interior backboard so the display reads through the glass
+  root.add(
+    box(winW - 0.2, winH - 0.15, 0.08, mat({ color: '#f7f3eb', roughness: 0.95, emissive: '#f0ebe3', emissiveIntensity: 0.2 }), winX, winY, -1.35)
+  );
 
   // Window sill
   root.add(box(winW + 0.4, 0.12, 0.45, woodMat, winX, winY - winH / 2 - 0.05, 0.35));
 
-  // Interior display platform
-  root.add(box(4.6, 0.15, 1.4, lightWoodMat, winX, 0.55, -0.55));
-  root.add(box(4.6, 0.45, 1.35, mat({ color: '#2a3340', roughness: 0.7 }), winX, 0.3, -0.55));
+  // Interior display platform — light wood, brought forward
+  root.add(box(4.6, 0.15, 1.5, lightWoodMat, winX, 0.55, -0.2));
+  root.add(box(4.6, 0.45, 1.45, mat({ color: '#d7c4a8', roughness: 0.75 }), winX, 0.3, -0.2));
 
   // --- Door (right) ---
   const doorX = 3.15;
@@ -297,18 +296,18 @@ export function createStorefront(coverMap) {
 
   // --- Featured book display (window) ---
   const display = new THREE.Group();
-  display.position.set(winX, 0.7, -0.35);
+  display.position.set(winX, 0.7, 0.05);
 
   // Pedestal
-  const pedestal = box(0.7, 0.85, 0.7, lightWoodMat, 0, 0.42, 0);
+  const pedestal = box(0.75, 0.85, 0.75, lightWoodMat, 0, 0.42, 0);
   display.add(pedestal);
-  display.add(box(0.85, 0.06, 0.85, woodMat, 0, 0.88, 0));
+  display.add(box(0.9, 0.06, 0.9, woodMat, 0, 0.88, 0));
 
-  // Featured book — uses real cover
-  const bookW = 0.42;
-  const bookH = 0.6;
-  const bookD = 0.06;
-  const coverMat = mat({ map: coverMap, roughness: 0.45, metalness: 0.05 });
+  // Featured book — uses real cover, facing the street
+  const bookW = 0.52;
+  const bookH = 0.74;
+  const bookD = 0.07;
+  const coverMat = mat({ map: coverMap, roughness: 0.4, metalness: 0 });
   const pageMat = mat({ color: '#f4f0e8', roughness: 0.85 });
   const spineMat = mat({ color: DEEP, roughness: 0.5 });
   const featured = new THREE.Mesh(new THREE.BoxGeometry(bookW, bookH, bookD), [
@@ -319,24 +318,21 @@ export function createStorefront(coverMap) {
     coverMat,
     mat({ color: FOAM, roughness: 0.5 }),
   ]);
-  featured.position.set(0, 1.22, 0.02);
-  featured.rotation.y = -0.18;
+  featured.position.set(0, 1.3, 0.12);
+  featured.rotation.y = -0.12;
   featured.castShadow = true;
   display.add(featured);
 
-  // Slight lean / second copy behind
+  // Second copy slightly behind
   const copy2 = featured.clone();
-  copy2.position.set(0.08, 1.2, -0.08);
-  copy2.rotation.y = 0.25;
-  copy2.scale.set(0.95, 0.95, 0.95);
+  copy2.position.set(0.12, 1.26, -0.1);
+  copy2.rotation.y = 0.28;
+  copy2.scale.set(0.92, 0.92, 0.92);
   display.add(copy2);
 
-  // Acrylic stand / easel suggestion
-  display.add(box(0.5, 0.02, 0.35, mat({ color: '#cfd8e0', roughness: 0.3, metalness: 0.4, transparent: true, opacity: 0.5 }), 0, 0.92, 0.05));
+  display.add(box(0.55, 0.02, 0.4, mat({ color: '#cfd8e0', roughness: 0.3, metalness: 0.2, transparent: true, opacity: 0.45 }), 0, 0.92, 0.08));
 
-  // Small Korean title plaque on pedestal
   const plaqueTex = posterTexture();
-  // Smaller plaque using canvas
   const plaque = new THREE.Mesh(
     new THREE.PlaneGeometry(0.55, 0.28),
     mat({
@@ -344,21 +340,21 @@ export function createStorefront(coverMap) {
       roughness: 0.5,
     })
   );
-  plaque.position.set(0, 0.55, 0.36);
+  plaque.position.set(0, 0.55, 0.4);
   display.add(plaque);
 
   root.add(display);
 
-  // Window posters on side of glass (inside)
+  // Window posters on sides (inside, not covering the book)
   const poster = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.7, 1.05),
+    new THREE.PlaneGeometry(0.55, 0.85),
     mat({ map: plaqueTex, roughness: 0.55 })
   );
-  poster.position.set(winX + 2.0, 2.1, -0.15);
+  poster.position.set(winX + 2.15, 2.35, -0.9);
   root.add(poster);
 
   const poster2 = poster.clone();
-  poster2.position.set(winX - 2.0, 2.1, -0.15);
+  poster2.position.set(winX - 2.15, 2.35, -0.9);
   root.add(poster2);
 
   // --- Interior bookshelves ---
@@ -494,9 +490,9 @@ export function createStorefront(coverMap) {
   for (let i = 0; i < 4; i++) {
     addBook(
       root,
-      winX - 1.5 + i * 0.22,
+      winX - 1.7 + i * 0.2,
       0.72 + i * 0.035,
-      -0.7,
+      -0.55,
       0.2,
       0.28,
       0.04,
@@ -509,9 +505,9 @@ export function createStorefront(coverMap) {
   for (let i = 0; i < 5; i++) {
     addBook(
       root,
-      winX + 1.35 + i * 0.08,
+      winX + 1.55 + i * 0.08,
       0.85,
-      -0.55,
+      -0.4,
       0.05,
       0.32 + (i % 3) * 0.04,
       0.22,
@@ -600,7 +596,7 @@ export function createStorefront(coverMap) {
   }
 
   // Spotlights for display (invisible helpers — real lights added in main)
-  root.userData.displayFocus = new THREE.Vector3(winX, 1.4, -0.2);
+  root.userData.displayFocus = new THREE.Vector3(winX, 1.5, 0.1);
   root.userData.featuredBook = featured;
 
   return root;

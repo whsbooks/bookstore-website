@@ -7,27 +7,95 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;500;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
-    <main id="app">
-      <canvas id="scene" aria-label="수영의 서점 storefront"></canvas>
-      <header class="hero">
-        <h1 class="brand">수영의 서점</h1>
-        <p class="tagline">창 앞에 놓인 책, Swimming the Art</p>
-        <a
-          class="cta"
-          href="https://github.com/whsbooks/swimming-book"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          책 보기
+    <div class="page">
+      <nav class="nav">
+        <a class="nav-brand" href="#top">수영의 서점</a>
+        <div class="nav-links">
+          <a href="#book">책</a>
+          <a href="https://github.com/whsbooks/swimming-book" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </nav>
+
+      <header class="hero" id="top">
+        <canvas id="scene" aria-label="수영의 서점 storefront"></canvas>
+        <div class="hero-copy">
+          <h1 class="brand">수영의 서점</h1>
+          <p class="tagline">창 앞에 놓인 책, Swimming the Art</p>
+          <a class="cta" href="#book">책 만나기</a>
+        </div>
+        <a class="scroll-hint" href="#book" aria-label="Scroll to book">
+          <span></span>
         </a>
       </header>
-    </main>
+
+      <section class="book-section" id="book">
+        <div class="book-layout">
+          <figure class="book-cover">
+            <img
+              src="./cover-01.png"
+              alt="Swimming the Art book cover by Wong Heung Sang"
+              width="400"
+              height="567"
+            />
+          </figure>
+          <div class="book-copy">
+            <p class="eyebrow">Preview edition</p>
+            <h2>Swimming<br /><em>The art</em></h2>
+            <p class="author">Wong Heung Sang</p>
+            <p class="blurb">
+              물에 뜨고, 숨을 고르고, 흐름을 느끼는 짧은 기록.
+              수영을 기술보다 감각으로 다가가는 책입니다.
+            </p>
+            <p class="blurb-en">
+              A quiet handbook on floating, rhythm, and feeling the water —
+              swimming as practice, meditation, and art.
+            </p>
+            <div class="book-actions">
+              <a
+                class="cta"
+                href="https://github.com/whsbooks/swimming-book"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                GitHub에서 읽기
+              </a>
+              <a
+                class="cta-ghost"
+                href="https://raw.githubusercontent.com/whsbooks/swimming-book/master/swimming-book.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                PDF 미리보기
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="site-footer">
+        <div class="footer-inner">
+          <div class="footer-brand">
+            <p class="footer-title">수영의 서점</p>
+            <p class="footer-sub">Swimming Bookstore</p>
+          </div>
+          <div class="footer-meta">
+            <p>
+              <a href="https://github.com/whsbooks/swimming-book" target="_blank" rel="noopener noreferrer"
+                >Swimming the Art</a
+              >
+              · Wong Heung Sang
+            </p>
+            <p class="copyright">© 2026 수영의 서점. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
